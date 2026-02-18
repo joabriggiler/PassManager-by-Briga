@@ -19,6 +19,7 @@ if (app.isPackaged) {
 
     autoUpdater.on("update-downloaded", () => {
         console.log("[Updater] Update downloaded. Waiting user confirm...");
+        pendingUpdateReady = true;
         if (win && win.webContents) win.webContents.send("update-ready");
     });
 
@@ -28,6 +29,7 @@ if (app.isPackaged) {
 }
 
 let win; // referencia global a la ventana principal
+let pendingUpdateReady = false;
 
 function createWindow() {
     win = new BrowserWindow({
@@ -48,6 +50,13 @@ function createWindow() {
     });
 
     win.loadFile(path.join(__dirname, 'index.html'));
+    win.webContents.on("did-finish-load", () => {
+        if (pendingUpdateReady) {
+            win.webContents.send("update-ready");
+            pendingUpdateReady = false;
+        }
+    });
+    
     if (!app.isPackaged) {
         //win.webContents.openDevTools();
     }
