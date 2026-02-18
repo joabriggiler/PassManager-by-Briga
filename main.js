@@ -18,8 +18,8 @@ if (app.isPackaged) {
     );
 
     autoUpdater.on("update-downloaded", () => {
-        console.log("[Updater] Update downloaded. Installing...");
-        autoUpdater.quitAndInstall();
+        console.log("[Updater] Update downloaded. Waiting user confirm...");
+        if (win && win.webContents) win.webContents.send("update-ready");
     });
 
     autoUpdater.on("error", (err) => {
@@ -119,4 +119,10 @@ ipcMain.on('maximize-app', () => {
 
 ipcMain.on('close-app', () => {
     app.quit();
+});
+
+ipcMain.on("install-update", () => {
+    if (!app.isPackaged) return;
+    console.log("[Updater] User confirmed. Installing update...");
+    autoUpdater.quitAndInstall();
 });

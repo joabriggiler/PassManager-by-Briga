@@ -621,3 +621,13 @@ async function prepararVistaEditService(id_service) {
         }
     });
 }
+
+//Mostrar posible actualizacion
+if (window.pm?.updater?.onReady) {
+    window.pm.updater.onReady(async () => {
+        const ok = await mostrarConfirmacionCustom(
+        "Hay una actualización lista para instalar.\n¿Querés actualizar ahora? (La app se reiniciará)"
+        );
+        if (ok) window.pm.updater.install();
+    });
+}
