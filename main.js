@@ -133,5 +133,5 @@ ipcMain.on('close-app', () => {
 ipcMain.on("install-update", () => {
     if (!app.isPackaged) return;
     console.log("[Updater] User confirmed. Installing update...");
-    autoUpdater.quitAndInstall();
+    autoUpdater.quitAndInstall(true, true);
 });

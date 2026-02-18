@@ -1,6 +1,6 @@
 {
   "name": "pass-manager",
-  "version": "1.0.5",
+  "version": "1.0.6",
   "description": "PassManager es una app para administrar contraseñas.",
   "license": "MIT",
   "repository": {
@@ -43,7 +43,9 @@
     "nsis": {
       "oneClick": false,
       "allowToChangeInstallationDirectory": true,
-      "perMachine": false
+      "perMachine": false,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true
     },
     "publish": [
       {
