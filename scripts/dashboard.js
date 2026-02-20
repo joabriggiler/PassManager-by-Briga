@@ -74,7 +74,7 @@ function verificarPasswordRepetidas(cuentas) {
     return frecuencias;
 }
 function lanzarAlertaSeguridad() {
-    const mensaje = "⚠️ Riesgo de Seguridad:\nEsta contraseña se repite en más de 3 cuentas.\n\nSe recomienda usar contraseñas únicas para cada servicio.";
+    const mensaje = "⚠️ Esta contraseña se repite en más de 3 cuentas.\n\nSe recomienda usar contraseñas únicas para cada servicio.";
     mostrarConfirmacionCustom(mensaje, false);
 }
 
