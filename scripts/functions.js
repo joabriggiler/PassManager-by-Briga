@@ -633,13 +633,14 @@ if (window.pm?.updater?.onReady) {
 }
 
 document.addEventListener("DOMContentLoaded", async () => {
-    if (!el || !window.pm?.window?.getVersion) return;
-    const v = await window.pm.window.getVersion();
+    const el = document.getElementById("app_version");
+    const getV = window.pm?.getVersion || window.pm?.window?.getVersion;
+    if (!el || !getV) return;
 
     try {
-        const v = await window.pm.getVersion();
+        const v = await getV();
         el.textContent = `v${v}`;
     } catch {
-        // silencioso
+        el.textContent = ""; // o "v?" si querés ver que falló
     }
 });
