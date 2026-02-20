@@ -8,8 +8,13 @@ if (!app.isPackaged && process.env.ELECTRON_RELOAD === "1") {
 
 // Auto-updater (solo se usa en builds instaladas)
 const { autoUpdater } = require("electron-updater");
+const IS_PORTABLE =
+  !!process.env.PORTABLE_EXECUTABLE_DIR ||
+  !!process.env.PORTABLE_EXECUTABLE_FILE;
 
-if (app.isPackaged) {
+if (app.isPackaged && !IS_PORTABLE) {
+    autoUpdater.autoInstallOnAppQuit = false;
+    autoUpdater.disableWebInstaller = true;
     autoUpdater.on("checking-for-update", () => console.log("[Updater] Checking for update..."));
     autoUpdater.on("update-available", () => console.log("[Updater] Update available"));
     autoUpdater.on("update-not-available", () => console.log("[Updater] No updates"));
@@ -105,8 +110,10 @@ app.whenReady().then(() => {
     createWindow();
 
     // Auto-update SOLO en build instalado
-    if (app.isPackaged) {
-        autoUpdater.checkForUpdatesAndNotify();
+    if (app.isPackaged && !IS_PORTABLE) {
+        autoUpdater.checkForUpdates().catch(err =>
+            console.error("[Updater] checkForUpdates failed:", err)
+        );
     }
 });
 

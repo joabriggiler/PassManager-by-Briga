@@ -118,34 +118,25 @@ function getAccessToken() {
 
 const REFRESH_TOKEN_KEY = "pm_refresh_token";
 
-function setRefreshToken(t) {
-    if (t) localStorage.setItem(REFRESH_TOKEN_KEY, t);
-    else localStorage.removeItem(REFRESH_TOKEN_KEY);
-}
-function getRefreshToken() {
-    return localStorage.getItem(REFRESH_TOKEN_KEY);
-}
+function setRefreshToken(_) {}
+function getRefreshToken() { return null; }
 
 // 1) Refresh: backend devuelve { status:'success', access_token:'...' } y setea/lee cookie HttpOnly del refresh
 async function refreshAccessToken() {
-    const rt = getRefreshToken();
-    if (!rt) return false;
-
     const res = await fetch(`${API_BASE}?accion=refresh`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ refresh_token: rt })
+        credentials: 'include',
+        body: JSON.stringify({})
     });
 
     const data = await res.json();
     if (data.status === 'success' && data.access_token) {
         setAccessToken(data.access_token);
-        setRefreshToken(data.refresh_token); // rotación
         return true;
     }
 
     setAccessToken(null);
-    setRefreshToken(null);
     return false;
 }
 
@@ -166,9 +157,10 @@ async function apiAuth(accion, { method = 'POST', body = null, query = null } = 
         }
 
         const res = await fetch(url.toString(), {
-        method,
-        headers,
-        body: body ? JSON.stringify(body) : undefined
+            method,
+            headers,
+            credentials: 'include',
+            body: body ? JSON.stringify(body) : undefined
         });
 
         return { res, data: await res.json().catch(() => ({})) };
@@ -272,6 +264,8 @@ async function navegarA(pagina) {
 
 // 1. Registro de usuario en PassManager
 async function registrarUsuario(email, masterPassword) {
+    email = (email || "").trim().toLowerCase();
+
     const kdf_salt_b64 = generarSaltB64();
     const { authVerifierB64, iterations } = await vault.deriveFromPassword(masterPassword, kdf_salt_b64, KDF_DEFAULT_ITERS);
 
@@ -279,6 +273,7 @@ async function registrarUsuario(email, masterPassword) {
     const response = await fetch(url, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        credentials: 'include',
         body: JSON.stringify({
         email,
         kdf_salt_b64,
@@ -297,10 +292,13 @@ async function registrarUsuario(email, masterPassword) {
 let usuarioIdActual = null;
 
 async function loginUsuario(email, masterPassword) {
+    email = (email || "").trim().toLowerCase();
+
     // 1) pedir salt + iters
     const pre = await fetch(`${API_BASE}?accion=prelogin`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        credentials: 'include',
         body: JSON.stringify({ email }),
     });
     const preData = await pre.json();
@@ -317,6 +315,7 @@ async function loginUsuario(email, masterPassword) {
     const response = await fetch(`${API_BASE}?accion=login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        credentials: 'include',
         body: JSON.stringify({ email, auth_verifier: authVerifierB64 }),
     });
 
@@ -324,7 +323,6 @@ async function loginUsuario(email, masterPassword) {
 
     if (data.status === "success") {
         setAccessToken(data.access_token);
-        setRefreshToken(data.refresh_token);
         vault.unlock(encKey); // 🔥 llave en RAM
     } else {
         vault.lock();

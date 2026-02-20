@@ -62,8 +62,14 @@ function prepararVistaNewService() {
 
         timeoutBusqueda = setTimeout(async () => {
             try {
-                const res = await fetch(`https://autocomplete.clearbit.com/v1/companies/suggest?query=${query}`);
-                const data = await res.json();
+                const res = await fetch(`${API_BASE}?accion=suggest_company`, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ query }),
+                    credentials: "include"
+                });
+                const payload = await res.json();
+                const data = payload.data || [];
 
                 const empresasFiltradas = [];
                 const nombresVistos = new Set();
