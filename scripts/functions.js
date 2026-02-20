@@ -633,8 +633,8 @@ if (window.pm?.updater?.onReady) {
 }
 
 document.addEventListener("DOMContentLoaded", async () => {
-    const el = document.getElementById("app_version");
-    if (!el || !window.pm?.getVersion) return;
+    if (!el || !window.pm?.window?.getVersion) return;
+    const v = await window.pm.window.getVersion();
 
     try {
         const v = await window.pm.getVersion();
