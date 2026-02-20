@@ -13,6 +13,7 @@ contextBridge.exposeInMainWorld("pm", {
         minimize: () => ipcRenderer.send("minimize-app"),
         maximize: () => ipcRenderer.send("maximize-app"),
         close: () => ipcRenderer.send("close-app"),
+        getVersion: () => ipcRenderer.invoke("get-app-version"),
     },
     clipboard: {
         writeText: (t) => clipboard.writeText(String(t ?? "")),

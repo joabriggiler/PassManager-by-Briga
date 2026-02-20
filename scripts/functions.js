@@ -631,3 +631,15 @@ if (window.pm?.updater?.onReady) {
         if (ok) window.pm.updater.install();
     });
 }
+
+document.addEventListener("DOMContentLoaded", async () => {
+    const el = document.getElementById("app_version");
+    if (!el || !window.pm?.getVersion) return;
+
+    try {
+        const v = await window.pm.getVersion();
+        el.textContent = `v${v}`;
+    } catch {
+        // silencioso
+    }
+});

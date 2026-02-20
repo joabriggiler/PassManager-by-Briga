@@ -142,3 +142,5 @@ ipcMain.on("install-update", () => {
     console.log("[Updater] User confirmed. Installing update...");
     autoUpdater.quitAndInstall(true, true);
 });
+
+ipcMain.handle("get-app-version", () => app.getVersion());

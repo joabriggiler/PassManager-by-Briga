@@ -42,6 +42,7 @@ body, .alert{
     cursor: pointer;
 }
 .header-app button svg, .header-alert button svg{ object-fit: contain; }
+.header-app p.anotacion{ letter-spacing: .07rem; }
 .logo-text{ color: white; font-weight: 600; font-size: 1.05rem; pointer-events: none; gap: 5px; }
 .logo-text svg{ width: 20px;height: 20px; }
 main, .alert-body, #page-container{ background-color: #1F1F1F;flex-direction: column; overflow: hidden; }
