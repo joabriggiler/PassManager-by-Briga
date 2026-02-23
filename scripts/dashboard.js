@@ -54,6 +54,15 @@ function alternarVisibilidadPassword(el) {
         el.innerHTML = pathHidden;
         txtPass.innerText = passReal;
         el.setAttribute("data-show", "true");
+
+        // auto-ocultar a los 5s (solo si sigue visible)
+        el._autoHidePass = setTimeout(() => {
+            if (el.getAttribute("data-show") === "true") {
+                el.innerHTML = pathVisible;
+                txtPass.innerText = "******";
+                el.setAttribute("data-show", "false");
+            }
+        }, 4000);
     }
 }
 
@@ -73,6 +82,38 @@ function verificarPasswordRepetidas(cuentas) {
     // 2. Retornamos el objeto de frecuencias para usarlo en el renderizado
     return frecuencias;
 }
+
+function genPassFill(svg){
+    const inputWrap = svg?.closest?.(".input");
+    const input = inputWrap?.querySelector?.("input");
+    if (!input) return;
+
+    input.value = genPass();
+
+    // si tu UI escucha cambios (validaciones, habilitar botón, etc.)
+    input.dispatchEvent(new Event("input", { bubbles: true }));
+    input.dispatchEvent(new Event("change", { bubbles: true }));
+}
+
+// Password generator (crypto-safe, minimal, unbiased). Usage: genPass(24)
+function genPass(len = 20, chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()-_=+[]{};:,.<>/?~") {
+    if (!Number.isInteger(len) || len < 1) throw new Error("len inválido");
+    if (typeof chars !== "string" || chars.length < 2) throw new Error("chars inválido");
+    if (!globalThis.crypto?.getRandomValues) throw new Error("crypto.getRandomValues no disponible");
+
+    const out = [];
+    const max = 0x100000000;                 // 2^32
+    const limit = max - (max % chars.length); // rejection sampling (sin sesgo)
+    const buf = new Uint32Array(1);
+
+    while (out.length < len) {
+        crypto.getRandomValues(buf);
+        const x = buf[0];
+        if (x < limit) out.push(chars[x % chars.length]);
+    }
+    return out.join("");
+}
+
 function lanzarAlertaSeguridad() {
     const mensaje = "⚠️ Esta contraseña se repite en más de 3 cuentas.\n\nSe recomienda usar contraseñas únicas para cada servicio.";
     mostrarConfirmacionCustom(mensaje, false);

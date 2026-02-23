@@ -8,10 +8,12 @@ function prepararVistaNewService() {
     const form = document.getElementById("new_service_form");
     if (!form) return;
 
+    const password_input = document.getElementById("password");
+
     form.addEventListener("submit", async function(event){
         event.preventDefault();
         mostrarError("");
-        alternarBotonFormulario();
+        alternarBotonFormulario(undefined, password_input);
         
         const service = document.getElementById("servicio_nombre").value;
         const email = document.getElementById("email").value;
@@ -24,11 +26,11 @@ function prepararVistaNewService() {
                 navegarA("dashboard"); // Volver al dashboard sin pestañeo
             } else {
                 mostrarError(resultado.message);
-                alternarBotonFormulario("Guardar");
+                alternarBotonFormulario("Guardar", password_input);
             }
         } catch (error) {
             mostrarError("Error de conexión");
-            alternarBotonFormulario("Guardar");
+            alternarBotonFormulario("Guardar", password_input);
         }
     });
 

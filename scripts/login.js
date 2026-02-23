@@ -27,7 +27,7 @@ function prepararVistaLogin() {
     form.addEventListener("submit", async function(event){
         event.preventDefault();
         mostrarError("");
-        alternarBotonFormulario();
+        alternarBotonFormulario(undefined, password_input);
 
         let avisoLento = false;
         const timerLento = setTimeout(() => {
@@ -62,11 +62,11 @@ function prepararVistaLogin() {
                     mostrarError(resultado.message, password_input, true);
                 }
 
-                alternarBotonFormulario();
+                alternarBotonFormulario(undefined, password_input);
             }
         } catch (error) {
             clearTimeout(timerLento);
-            alternarBotonFormulario();
+            alternarBotonFormulario(undefined, password_input);
         }
     });
 }
