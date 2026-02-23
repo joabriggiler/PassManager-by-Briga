@@ -54,6 +54,8 @@ function createWindow() {
         }
     });
 
+    if (process.platform === "win32" || process.platform === "darwin") win.setContentProtection(true);
+
     win.loadFile(path.join(__dirname, 'index.html'));
     win.webContents.on("did-finish-load", () => {
         if (pendingUpdateReady) {
@@ -61,10 +63,6 @@ function createWindow() {
             pendingUpdateReady = false;
         }
     });
-    
-    if (!app.isPackaged) {
-        //win.webContents.openDevTools();
-    }
 
     // (Opcional) elimina el menú para evitar "Reload" desde menú
     Menu.setApplicationMenu(null);
@@ -105,6 +103,12 @@ function createWindow() {
         win.webContents.closeDevTools();
     });
 }
+
+app.on("browser-window-created", (_e, w) => {
+    if (process.platform === "win32" || process.platform === "darwin") {
+        w.setContentProtection(true);
+    }
+});
 
 app.whenReady().then(() => {
     createWindow();
