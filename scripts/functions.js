@@ -10,7 +10,6 @@ async function desencriptarBlob(blobStr) {
   return await vault.decryptObject(blobStr); // devuelve OBJETO ya parseado
 }
 
-
 function bytesToB64(bytes) {
     let bin = "";
     bytes.forEach(b => bin += String.fromCharCode(b));
@@ -650,3 +649,109 @@ document.addEventListener("DOMContentLoaded", async () => {
         el.textContent = ""; // o "v?" si querés ver que falló
     }
 });
+
+// Title artificial de PassManager
+(() => {
+    const tip = document.createElement("div");
+    tip.className = "tooltip";
+    document.body.appendChild(tip);
+
+    let current = null;
+    let showTimer = null;
+    let suppressEl = null; // si clickeo el elemento, no vuelve a mostrar hasta salir y re-entrar
+    const SHOW_DELAY = 120;
+    const OFFSET = 19; // separación tooltip-elemento
+    const MARGIN = 23;  // margen a bordes pantalla
+
+    function clamp(n, min, max) {
+        return Math.max(min, Math.min(n, max));
+    }
+
+    function placeOver(el) {
+        const r = el.getBoundingClientRect();
+
+        // aseguramos que el tooltip tenga contenido antes de medir
+        const tr = tip.getBoundingClientRect();
+
+        let x = r.left + (r.width / 2) - (tr.width / 2);
+        let y = r.top - tr.height - OFFSET;
+
+        // si no entra arriba, lo ponemos abajo
+        if (y < MARGIN) y = r.bottom + OFFSET;
+
+        // clamp a viewport
+        x = clamp(x, MARGIN, window.innerWidth - tr.width - MARGIN);
+        y = clamp(y, MARGIN, window.innerHeight - tr.height - MARGIN);
+
+        tip.style.left = x + "px";
+        tip.style.top  = y + "px";
+    }
+
+    function show(el) {
+        const text = el.getAttribute("data-tooltip") || "";
+        if (!text) return;
+
+        clearTimeout(showTimer);
+        current = el;
+
+        showTimer = setTimeout(() => {
+            if (!current) return;
+            tip.textContent = text;
+            tip.classList.add("is-visible");
+            requestAnimationFrame(() => current && placeOver(current));
+        }, SHOW_DELAY);
+    }
+
+    function hide() {
+        clearTimeout(showTimer);
+        showTimer = null;
+        current = null;
+        tip.classList.remove("is-visible");
+    }
+
+    document.addEventListener("pointerover", (e) => {
+        const el = e.target.closest("[data-tooltip]");
+        if (!el || el === current) return;
+        if (el === suppressEl) return;
+        show(el);
+    });
+
+    document.addEventListener("pointerout", (e) => {
+        const el = e.target.closest("[data-tooltip]");
+        if (!el) return;
+
+        // Si salí completamente del elemento bloqueado, lo desbloqueo
+        if (el === suppressEl && !(e.relatedTarget && el.contains(e.relatedTarget))) {
+            suppressEl = null;
+        }
+
+        // tu lógica normal de hide
+        if (!current) return;
+        if (e.relatedTarget && current.contains(e.relatedTarget)) return;
+        hide();
+    });
+
+    document.addEventListener("pointerdown", (e) => {
+        const el = e.target.closest("[data-tooltip]");
+        if (!el) return;
+
+        if (el.hasAttribute("data-tooltip-noclick")) return; // 👈 NUEVO
+
+        if (el === current) {
+            hide();
+            suppressEl = el;
+        }
+    }, true);
+
+    // opcional: teclado (tab)
+    document.addEventListener("focusin", (e) => {
+        const el = e.target.closest("[data-tooltip]");
+        if (el === suppressEl) return;
+        if (el) show(el);
+    });
+    document.addEventListener("focusout", () => current && hide());
+
+    // si se scrollea o cambia el tamaño, lo ocultamos (más simple y robusto)
+    window.addEventListener("scroll", () => current && hide(), { passive: true });
+    window.addEventListener("resize", () => current && hide(), { passive: true });
+})();
