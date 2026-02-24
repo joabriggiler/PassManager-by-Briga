@@ -659,9 +659,9 @@ document.addEventListener("DOMContentLoaded", async () => {
     let current = null;
     let showTimer = null;
     let suppressEl = null; // si clickeo el elemento, no vuelve a mostrar hasta salir y re-entrar
-    const SHOW_DELAY = 120;
-    const OFFSET = 19; // separación tooltip-elemento
-    const MARGIN = 23;  // margen a bordes pantalla
+    const SHOW_DELAY = 200;
+    const OFFSET = 19;
+    const MARGIN = 25;
 
     function clamp(n, min, max) {
         return Math.max(min, Math.min(n, max));
@@ -669,6 +669,8 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     function placeOver(el) {
         const r = el.getBoundingClientRect();
+        tip.style.left = "0px";
+        tip.style.top = "0px";
 
         // aseguramos que el tooltip tenga contenido antes de medir
         const tr = tip.getBoundingClientRect();
@@ -713,6 +715,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         const el = e.target.closest("[data-tooltip]");
         if (!el || el === current) return;
         if (el === suppressEl) return;
+        hide();
         show(el);
     });
 
