@@ -1,4 +1,4 @@
-const { app, BrowserWindow, ipcMain, Menu } = require("electron");
+const { app, BrowserWindow, ipcMain, Menu, shell } = require("electron");
 const path = require("path");
 
 // Hot reload SOLO en desarrollo (si lo activás con ELECTRON_RELOAD=1)
@@ -50,13 +50,16 @@ function createWindow() {
             nodeIntegration: false,
             contextIsolation: true,
             sandbox: true,
-            devTools: false,
+            devTools: true,
         }
     });
 
     if (process.platform === "win32" || process.platform === "darwin") win.setContentProtection(true);
 
     win.loadFile(path.join(__dirname, 'index.html'));
+
+    win.webContents.openDevTools();
+
     win.webContents.on("did-finish-load", () => {
         if (pendingUpdateReady) {
             win.webContents.send("update-ready");
@@ -99,9 +102,6 @@ function createWindow() {
     win.on('maximize', () => win.webContents.focus());
     win.webContents.setWindowOpenHandler(() => ({ action: "deny" }));
     win.webContents.on("will-navigate", (e) => e.preventDefault());
-    win.webContents.on("devtools-opened", () => {
-        win.webContents.closeDevTools();
-    });
 }
 
 app.on("browser-window-created", (_e, w) => {
@@ -145,6 +145,66 @@ ipcMain.on("install-update", () => {
     if (!app.isPackaged) return;
     console.log("[Updater] User confirmed. Installing update...");
     autoUpdater.quitAndInstall(true, true);
+});
+
+ipcMain.handle("open-external", async (_event, url) => {
+    try {
+        const u = new URL(String(url));
+
+        // seguridad mínima: solo https
+        if (u.protocol !== "https:") {
+            return { ok: false, message: "URL inválida (solo https)." };
+        }
+
+        await shell.openExternal(u.toString());
+        return { ok: true };
+    } catch (e) {
+        return { ok: false, message: "URL inválida." };
+    }
+});
+
+ipcMain.handle("open-payment", async (_event, url) => {
+    // Verificamos que sea una URL válida
+    try {
+        const u = new URL(String(url));
+        if (u.protocol !== "https:") throw new Error();
+    } catch (e) {
+        return { ok: false, message: "URL de pago inválida." };
+    }
+
+    // Creamos la ventana hija
+    const paymentWin = new BrowserWindow({
+        width: 500,
+        height: 700,
+        parent: win,       // IMPORTANTE: Hace que esta ventana dependa de la principal
+        modal: true,       // Opcional: Bloquea la app principal hasta que se cierre el pago
+        icon: path.join(__dirname, 'favicon.ico'),
+        autoHideMenuBar: true,
+        // Usamos frame: true para tener el botón "X" nativo, ya que LemonSqueezy
+        // no tendrá tus botones personalizados de index.html
+        frame: true,       
+        webPreferences: {
+            nodeIntegration: false,
+            contextIsolation: true,
+            sandbox: true
+        }
+    });
+
+    // Eliminamos el menú por defecto de Electron
+    paymentWin.setMenu(null);
+
+    // Cargamos la URL de Lemon Squeezy
+    await paymentWin.loadURL(url);
+
+    // (Opcional) Detectar cuando navega a la URL de éxito para cerrar la ventana automáticamente
+    paymentWin.webContents.on('did-navigate', (event, newUrl) => {
+        if (newUrl.includes('accion=pago_finalizado')) {
+             // Puedes cerrar la ventana automáticamente tras unos segundos si quieres
+             // setTimeout(() => paymentWin.close(), 3000);
+        }
+    });
+
+    return { ok: true };
 });
 
 ipcMain.handle("get-app-version", () => app.getVersion());

@@ -10,6 +10,10 @@ function on(channel, cb) {
 
 contextBridge.exposeInMainWorld("pm", {
     getVersion: () => ipcRenderer.invoke("get-app-version"),
+    openExternal: (url) => ipcRenderer.invoke("open-external", url),
+
+    openPayment: (url) => ipcRenderer.invoke("open-payment", url),
+
     window: {
         minimize: () => ipcRenderer.send("minimize-app"),
         maximize: () => ipcRenderer.send("maximize-app"),
