@@ -13,6 +13,8 @@ contextBridge.exposeInMainWorld("pm", {
     openExternal: (url) => ipcRenderer.invoke("open-external", url),
 
     openPayment: (url) => ipcRenderer.invoke("open-payment", url),
+    closePaymentWindow: () => ipcRenderer.send("close-payment-modal"),
+    onPaymentLoaded: (callback) => ipcRenderer.on('payment-loaded', callback),
 
     window: {
         minimize: () => ipcRenderer.send("minimize-app"),

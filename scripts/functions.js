@@ -439,11 +439,46 @@ async function inicializarApp() {
     else navegarA('login');
 }
 
-// Ejecutar cuando el DOM esté listo
-if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', inicializarApp);
+
+const urlParams = new URLSearchParams(window.location.search);
+const isModal = urlParams.get('mode') === 'modal';
+
+if (isModal) {
+    // ESTAMOS EN MODO PAGO (MODAL)
+    
+    // 1. Ocultar botones innecesarios y el loader
+    document.getElementById('maximize_app').style.display = 'none';
+    document.getElementById('app_version').style.display = 'none';
+    const loader = document.getElementById('load_page');
+    if (loader) {
+        loader.classList.remove('disabled'); 
+        loader.style.display = 'flex'; // Aseguramos que se vea
+    }
+
+    // 2. Cambiar el comportamiento del botón CERRAR
+    const oldCloseBtn = document.getElementById('close_app');
+    const newCloseBtn = oldCloseBtn.cloneNode(true);
+    oldCloseBtn.parentNode.replaceChild(newCloseBtn, oldCloseBtn);
+    
+    newCloseBtn.addEventListener('click', () => {
+        window.close(); 
+    });
+
+    // 3. NUEVO: Escuchamos cuando Main nos diga "Lemon ya cargó"
+    if (window.pm && window.pm.onPaymentLoaded) {
+        window.pm.onPaymentLoaded(() => {
+            // Ocultamos tu loader HTML
+            if (loader) loader.classList.add('disabled');
+        });
+    }
+
 } else {
-    inicializarApp();
+    // Ejecutar cuando el DOM esté listo
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', inicializarApp);
+    } else {
+        inicializarApp();
+    }
 }
 
 function mostrarConfirmacionCustom(mensaje, cancelOption = true) {

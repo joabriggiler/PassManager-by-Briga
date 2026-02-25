@@ -1,4 +1,4 @@
-const { app, BrowserWindow, ipcMain, Menu, shell } = require("electron");
+const { app, BrowserWindow, ipcMain, Menu, shell, BrowserView } = require("electron");
 const path = require("path");
 
 // Hot reload SOLO en desarrollo (si lo activás con ELECTRON_RELOAD=1)
@@ -50,7 +50,7 @@ function createWindow() {
             nodeIntegration: false,
             contextIsolation: true,
             sandbox: true,
-            devTools: true,
+            devTools: false,
         }
     });
 
@@ -122,19 +122,22 @@ app.whenReady().then(() => {
 });
 
 // Lógica mejorada usando la instancia 'win' directamente
-ipcMain.on('minimize-app', () => {
-    if (win) win.minimize();
+ipcMain.on('minimize-app', (event) => {
+    // Obtenemos la ventana que envió el evento (puede ser la principal o el modal)
+    const window = BrowserWindow.fromWebContents(event.sender);
+    if (window) window.minimize();
 });
 
+// Maximizar SIEMPRE la app principal
 ipcMain.on('maximize-app', () => {
-    if (!win) return;
-    if (win.isMaximized()) {
-        win.unmaximize();
-    } else {
-        win.maximize();
+    if (win) {
+        if (win.isMaximized()) {
+            win.unmaximize();
+        } else {
+            win.maximize();
+        }
+        win.webContents.focus();
     }
-    // Forzamos que el contenido web recupere el foco tras el cambio de tamaño
-    win.webContents.focus();
 });
 
 ipcMain.on('close-app', () => {
@@ -164,44 +167,52 @@ ipcMain.handle("open-external", async (_event, url) => {
 });
 
 ipcMain.handle("open-payment", async (_event, url) => {
-    // Verificamos que sea una URL válida
-    try {
-        const u = new URL(String(url));
-        if (u.protocol !== "https:") throw new Error();
-    } catch (e) {
-        return { ok: false, message: "URL de pago inválida." };
-    }
+    const TITLE_BAR_HEIGHT = 40; // Ajusta a la altura real de tu header
+    const WIDTH = 500;
+    const HEIGHT = 700;
 
-    // Creamos la ventana hija
     const paymentWin = new BrowserWindow({
-        width: 500,
-        height: 700,
-        parent: win,       // IMPORTANTE: Hace que esta ventana dependa de la principal
-        modal: true,       // Opcional: Bloquea la app principal hasta que se cierre el pago
+        width: WIDTH,
+        height: HEIGHT,
+        parent: win,
+        modal: true,
+        frame: false,      // Sin marco nativo (usamos el tuyo)
+        resizable: false,
         icon: path.join(__dirname, 'favicon.ico'),
-        autoHideMenuBar: true,
-        // Usamos frame: true para tener el botón "X" nativo, ya que LemonSqueezy
-        // no tendrá tus botones personalizados de index.html
-        frame: true,       
         webPreferences: {
+            preload: path.join(__dirname, "preload.js"),
             nodeIntegration: false,
-            contextIsolation: true,
-            sandbox: true
+            contextIsolation: true
         }
     });
 
-    // Eliminamos el menú por defecto de Electron
-    paymentWin.setMenu(null);
+    // TRUCO: Cargamos index.html pero le avisamos que es un modal
+    paymentWin.loadURL(`file://${path.join(__dirname, 'index.html')}?mode=modal`);
 
-    // Cargamos la URL de Lemon Squeezy
-    await paymentWin.loadURL(url);
+    const view = new BrowserView({
+        webPreferences: { nodeIntegration: false, contextIsolation: true }
+    });
 
-    // (Opcional) Detectar cuando navega a la URL de éxito para cerrar la ventana automáticamente
-    paymentWin.webContents.on('did-navigate', (event, newUrl) => {
-        if (newUrl.includes('accion=pago_finalizado')) {
-             // Puedes cerrar la ventana automáticamente tras unos segundos si quieres
-             // setTimeout(() => paymentWin.close(), 3000);
-        }
+    paymentWin.setBrowserView(view);
+    const BORDER_SIZE = 7; 
+
+    view.setBounds({ 
+        x: BORDER_SIZE, 
+        y: TITLE_BAR_HEIGHT, 
+        width: WIDTH - (BORDER_SIZE * 2),        // Restamos izquierda y derecha
+        height: HEIGHT - TITLE_BAR_HEIGHT - BORDER_SIZE // Restamos abajo
+    });
+    
+    await view.webContents.loadURL(url);
+
+    const closeHandler = () => {
+        if (!paymentWin.isDestroyed()) paymentWin.close();
+    };
+
+    // Escuchamos UNA VEZ
+    ipcMain.once('close-payment-modal', closeHandler);
+    paymentWin.on('closed', () => {
+        ipcMain.removeListener('close-payment-modal', closeHandler);
     });
 
     return { ok: true };
