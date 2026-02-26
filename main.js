@@ -50,7 +50,7 @@ function createWindow() {
             nodeIntegration: false,
             contextIsolation: true,
             sandbox: true,
-            devTools: false,
+            devTools: true,
         }
     });
 
@@ -167,89 +167,72 @@ ipcMain.handle("open-external", async (_event, url) => {
 });
 
 ipcMain.handle("open-payment", async (_event, url) => {
-    const TITLE_BAR_HEIGHT = 40; // Ajusta a la altura real de tu header
+    const TITLE_BAR_HEIGHT = 40; 
     const WIDTH = 500;
     const HEIGHT = 700;
 
     const paymentWin = new BrowserWindow({
-        width: WIDTH,
-        height: HEIGHT,
-        parent: win,
-        modal: true,
-        frame: false,      // Sin marco nativo (usamos el tuyo)
-        resizable: false,
-        icon: path.join(__dirname, 'favicon.ico'),
+        width: WIDTH, height: HEIGHT,
+        parent: win, modal: true,
+        frame: false, resizable: false,
         webPreferences: {
             preload: path.join(__dirname, "preload.js"),
-            nodeIntegration: false,
             contextIsolation: true
         }
     });
 
-    // TRUCO: Cargamos index.html pero le avisamos que es un modal
     paymentWin.loadURL(`file://${path.join(__dirname, 'index.html')}?mode=modal`);
 
     const view = new BrowserView({
         webPreferences: { nodeIntegration: false, contextIsolation: true }
     });
 
-    let pagoCompletado = false; // Variable para rastrear el éxito
+    let pagoCompletado = false;
 
+    // Seteamos el manejador de cierre ANTES de cargar la URL
+    const closeHandler = () => {
+        if (!paymentWin.isDestroyed()) paymentWin.close();
+    };
+    ipcMain.once('close-payment-modal', closeHandler);
+
+    // Configuramos la vista
+    paymentWin.setBrowserView(view);
+    view.setBounds({ 
+        x: 7, y: TITLE_BAR_HEIGHT, 
+        width: WIDTH - 14, height: HEIGHT - TITLE_BAR_HEIGHT - 7 
+    });
+
+    // Detectar éxito/cancelación
     view.webContents.on('will-navigate', (event, targetUrl) => {
         if (targetUrl.includes('pago_finalizado')) {
-            pagoCompletado = true; // <--- Seteamos éxito
+            pagoCompletado = true;
             event.preventDefault();
-            if (!paymentWin.isDestroyed()) paymentWin.close();
+            closeHandler();
         }
         if (targetUrl.includes('pago_cancelado')) {
             pagoCompletado = false;
             event.preventDefault();
-            if (!paymentWin.isDestroyed()) paymentWin.close();
+            closeHandler();
         }
     });
 
-    const customUA = view.webContents.userAgent.replace(/Electron\/\S+\s/, "");
-    view.webContents.userAgent = customUA;
-
-    view.webContents.on('close', () => {
-        if (!paymentWin.isDestroyed()) paymentWin.close();
-    });
-
-    // 2. Permitimos que LemonSqueezy/Stripe abran el popup de 3D Secure o PayPal
-    view.webContents.setWindowOpenHandler(({ url }) => {
-        // Si es parte del flujo de pago, dejamos que abra el modal interno
-        if (url.includes("stripe") || url.includes("lemonsqueezy") || url.includes("paypal")) {
-            return { action: 'allow' };
-        }
-        // Si es un link externo (términos y condiciones, etc), lo abrimos en el navegador normal del usuario
-        require('electron').shell.openExternal(url);
-        return { action: 'deny' };
-    });
-
-    paymentWin.setBrowserView(view);
-    const BORDER_SIZE = 7; 
-
-    view.setBounds({ 
-        x: BORDER_SIZE, 
-        y: TITLE_BAR_HEIGHT, 
-        width: WIDTH - (BORDER_SIZE * 2),        // Restamos izquierda y derecha
-        height: HEIGHT - TITLE_BAR_HEIGHT - BORDER_SIZE // Restamos abajo
-    });
-    
-    await view.webContents.loadURL(url);
-
-    const closeHandler = () => {
-        if (!paymentWin.isDestroyed()) paymentWin.close();
-    };
-
-    ipcMain.once('close-payment-modal', closeHandler);
-
-    return new Promise((resolve) => {
+    // LA CLAVE: Envolvemos todo en una promesa única
+    return new Promise(async (resolve) => {
+        
+        // Si la ventana se cierra (por la X o por script), resolvemos SIEMPRE
         paymentWin.on('closed', () => {
             ipcMain.removeListener('close-payment-modal', closeHandler);
-            // Devolvemos el estado real del flujo
-            resolve({ ok: pagoCompletado }); 
+            resolve({ ok: pagoCompletado });
         });
+
+        try {
+            // Intentamos cargar la URL de Lemon
+            await view.webContents.loadURL(url);
+        } catch (e) {
+            // Si el usuario cierra el modal antes de que cargue, 
+            // loadURL fallará. Simplemente lo ignoramos porque 'closed' resolverá la promesa.
+            console.log("Carga de pago interrumpida.");
+        }
     });
 });
 

@@ -45,7 +45,7 @@ body, .alert{
 .header-app p.anotacion{ letter-spacing: .07rem; }
 .logo-text{ color: white; font-weight: 600; font-size: 1.05rem; pointer-events: none; gap: 5px; }
 .logo-text svg{ width: 20px;height: 20px; }
-main, .alert-body, #page-container{ background-color: #1F1F1F;flex-direction: column; overflow: hidden; }
+main, .alert-body, #page-container{ background-color: #1F1F1F;flex-direction: column; overflow: hidden; width: 100%; }
 .footer-app, .footer-alert{ justify-content: space-between; height: fit-content; padding: 10px 12px; }
 
 /*Organización web*/
@@ -331,6 +331,8 @@ p.txt-password{ color: rgb(164, 164, 164) !important; }
     box-sizing: border-box;
     gap: 20px;
     border-radius: 4px;
+    align-items: start;
+    padding-bottom: 30px;
 }
 .alert-body p{ color: white; }
 .footer-alert a.anotacion { box-shadow: 0px 0px 0px .05rem rgb(92, 92, 92);color: white; }

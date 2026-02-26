@@ -483,39 +483,59 @@ async function procederPago() {
     const opacador = document.querySelector(".opacador");
     opacador.classList.add("modal-enabled");
     
-    // Esperamos a que el modal se cierre y capturamos el resultado
-    const resultado = await window.payments.pagarPro();
+    // Esta variable nos dirá si el usuario llegó a pagar con éxito
+    let pasoALaVerificacion = false;
 
-    // SI EL USUARIO CERRÓ LA VENTANA O CANCELÓ:
-    if (!resultado || !resultado.ok) {
-        opacador.classList.remove("modal-enabled");
-        return false;
+    try {
+        // 1. Esperamos a que el modal se cierre
+        const resultado = await window.payments.pagarPro();
+
+        // 2. ¿El usuario cerró la ventana o Lemon devolvió error?
+        if (resultado && resultado.ok) {
+            pasoALaVerificacion = true;
+            await iniciarVerificacionPro(opacador);
+        }
+
+    } catch (error) {
+        console.error("Error crítico en el flujo de pago:", error);
+    } finally {
+        // SI ALGO FALLÓ (el bridge, el modal se cerró antes, o hubo un error de red)
+        if (!pasoALaVerificacion) {
+            opacador.classList.remove("modal-enabled");
+        }
     }
-
-    // Iniciamos la verificación (polling) para confirmar si el Webhook ya impactó la DB
-    let intentos = 0;
-    const maxIntentos = 5; // Podemos subir intentos si queremos ser pacientes con el webhook
-
-    const verificar = async () => {
-        intentos++;
-        const res = await window.payments.checkProStatus();
-        
-        if (res.status === "success" && res.is_pro) {
-            opacador.classList.remove("modal-enabled");
-            alert("¡Bienvenido a Pro!"); 
-            return;
-        }
-
-        if (intentos < maxIntentos) {
-            setTimeout(verificar, 2000); // Reintento más rápido (cada 2 seg)
-        } else {
-            opacador.classList.remove("modal-enabled");
-            alert("Lo sentimos, algo salio mal."); 
-        }
-    };
-
-    verificar();
+    
     return false;
+}
+
+// Separamos la lógica de verificación para que el código sea legible
+async function iniciarVerificacionPro(opacador) {
+    let intentos = 0;
+    const maxIntentos = 10; // 10 intentos * 2 seg = 20 segundos
+
+    // Usamos una Promesa para que 'procederPago' pueda hacer el 'await' correctamente
+    return new Promise((resolve) => {
+        const verificar = async () => {
+            intentos++;
+            const res = await window.payments.checkProStatus();
+            
+            if (res.status === "success" && res.is_pro) {
+                opacador.classList.remove("modal-enabled");
+                mostrarConfirmacionCustom("¡Bienvenido a Pro!", false); 
+                resolve(true); // Terminó con éxito
+                return;
+            }
+
+            if (intentos < maxIntentos) {
+                setTimeout(verificar, 2000); 
+            } else {
+                opacador.classList.remove("modal-enabled");
+                mostrarConfirmacionCustom("El pago se procesó, pero la activación tarda. Reinicia la app en unos minutos.", false); 
+                resolve(false); // Terminó por timeout
+            }
+        };
+        verificar();
+    });
 }
 
 function mostrarConfirmacionCustom(mensaje, cancelOption = true) {
