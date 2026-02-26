@@ -313,12 +313,14 @@ p.txt-password{ color: rgb(164, 164, 164) !important; }
     top: 0;
     left: 0;
     z-index: 4;
-    backdrop-filter: blur(2px);
+    backdrop-filter: blur(3px);
     padding: 20px;
     transition: all .15s ease;
 }
-.opacador.enabled{ opacity: 1; pointer-events: all; }
+.opacador.enabled ,.opacador.modal-enabled{ opacity: 1; pointer-events: all; }
+.opacador.enabled .alert { display: flex !important; }
 .alert{
+    display: none;
     border-radius: 4px;
     gap: 0;
     min-width: 300px;

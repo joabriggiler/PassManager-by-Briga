@@ -193,6 +193,39 @@ ipcMain.handle("open-payment", async (_event, url) => {
         webPreferences: { nodeIntegration: false, contextIsolation: true }
     });
 
+    let pagoCompletado = false; // Variable para rastrear el éxito
+
+    view.webContents.on('will-navigate', (event, targetUrl) => {
+        if (targetUrl.includes('pago_finalizado')) {
+            pagoCompletado = true; // <--- Seteamos éxito
+            event.preventDefault();
+            if (!paymentWin.isDestroyed()) paymentWin.close();
+        }
+        if (targetUrl.includes('pago_cancelado')) {
+            pagoCompletado = false;
+            event.preventDefault();
+            if (!paymentWin.isDestroyed()) paymentWin.close();
+        }
+    });
+
+    const customUA = view.webContents.userAgent.replace(/Electron\/\S+\s/, "");
+    view.webContents.userAgent = customUA;
+
+    view.webContents.on('close', () => {
+        if (!paymentWin.isDestroyed()) paymentWin.close();
+    });
+
+    // 2. Permitimos que LemonSqueezy/Stripe abran el popup de 3D Secure o PayPal
+    view.webContents.setWindowOpenHandler(({ url }) => {
+        // Si es parte del flujo de pago, dejamos que abra el modal interno
+        if (url.includes("stripe") || url.includes("lemonsqueezy") || url.includes("paypal")) {
+            return { action: 'allow' };
+        }
+        // Si es un link externo (términos y condiciones, etc), lo abrimos en el navegador normal del usuario
+        require('electron').shell.openExternal(url);
+        return { action: 'deny' };
+    });
+
     paymentWin.setBrowserView(view);
     const BORDER_SIZE = 7; 
 
@@ -209,13 +242,15 @@ ipcMain.handle("open-payment", async (_event, url) => {
         if (!paymentWin.isDestroyed()) paymentWin.close();
     };
 
-    // Escuchamos UNA VEZ
     ipcMain.once('close-payment-modal', closeHandler);
-    paymentWin.on('closed', () => {
-        ipcMain.removeListener('close-payment-modal', closeHandler);
-    });
 
-    return { ok: true };
+    return new Promise((resolve) => {
+        paymentWin.on('closed', () => {
+            ipcMain.removeListener('close-payment-modal', closeHandler);
+            // Devolvemos el estado real del flujo
+            resolve({ ok: pagoCompletado }); 
+        });
+    });
 });
 
 ipcMain.handle("get-app-version", () => app.getVersion());

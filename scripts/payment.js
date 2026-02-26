@@ -8,22 +8,17 @@
 
     async function pagarPro() {
         const data = await crearCheckoutPro();
+        
+        // Si la API falla al crear el link, devolvemos el error tal cual
         if (data?.status !== "success" || !data?.url) return data;
 
-        // Abrir checkout vía preload/main (Electron seguro)
-        if (!window.pm || typeof window.pm.openExternal !== "function") {
-        return {
-            status: "error",
-            message: "Falta window.pm.openExternal. Agregá el bridge en preload.js y el handler en main.js.",
-        };
-        }
-
+        // 2. Abrimos el modal de Electron y ESPERAMOS a que se cierre
+        // Esta promesa devolverá { ok: true } si llegó a la URL de éxito
+        // o { ok: false } si el usuario cerró la ventana manualmente.
         const r = await window.pm.openPayment(data.url);
-        if (r && r.ok === false) {
-        return { status: "error", message: r.message || "No se pudo abrir el checkout." };
-        }
 
-        return { status: "success" };
+        // 3. Devolvemos ese objeto r directamente a procederPago()
+        return r; 
     }
 
     async function checkProStatus() {

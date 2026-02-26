@@ -444,8 +444,6 @@ const urlParams = new URLSearchParams(window.location.search);
 const isModal = urlParams.get('mode') === 'modal';
 
 if (isModal) {
-    // ESTAMOS EN MODO PAGO (MODAL)
-    
     // 1. Ocultar botones innecesarios y el loader
     document.getElementById('maximize_app').style.display = 'none';
     document.getElementById('app_version').style.display = 'none';
@@ -479,6 +477,45 @@ if (isModal) {
     } else {
         inicializarApp();
     }
+}
+
+async function procederPago() {
+    const opacador = document.querySelector(".opacador");
+    opacador.classList.add("modal-enabled");
+    
+    // Esperamos a que el modal se cierre y capturamos el resultado
+    const resultado = await window.payments.pagarPro();
+
+    // SI EL USUARIO CERRÓ LA VENTANA O CANCELÓ:
+    if (!resultado || !resultado.ok) {
+        opacador.classList.remove("modal-enabled");
+        return false;
+    }
+
+    // Iniciamos la verificación (polling) para confirmar si el Webhook ya impactó la DB
+    let intentos = 0;
+    const maxIntentos = 5; // Podemos subir intentos si queremos ser pacientes con el webhook
+
+    const verificar = async () => {
+        intentos++;
+        const res = await window.payments.checkProStatus();
+        
+        if (res.status === "success" && res.is_pro) {
+            opacador.classList.remove("modal-enabled");
+            alert("¡Bienvenido a Pro!"); 
+            return;
+        }
+
+        if (intentos < maxIntentos) {
+            setTimeout(verificar, 2000); // Reintento más rápido (cada 2 seg)
+        } else {
+            opacador.classList.remove("modal-enabled");
+            alert("Lo sentimos, algo salio mal."); 
+        }
+    };
+
+    verificar();
+    return false;
 }
 
 function mostrarConfirmacionCustom(mensaje, cancelOption = true) {
