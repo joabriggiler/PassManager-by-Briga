@@ -6,7 +6,7 @@
     <meta http-equiv="Content-Security-Policy"
       content="
         default-src 'self';
-        script-src 'self' 'unsafe-inline';
+        script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net;
         style-src 'self' 'unsafe-inline';
         img-src 'self' https: data:;
         connect-src 'self' https://passmanager-api.onrender.com https://autocomplete.clearbit.com;
@@ -62,7 +62,14 @@
                     </div>
                 </div>
                 <div class="alert-body">
-                    <p class="anotacion"></p>
+                    <p class="alert-msg anotacion"></p>
+
+                    <div class="alert-box columna" style=" padding: 20px; gap: 17px; text-align: center; ">
+                        <svg class="svg" style=" width: 100px; height: min-content; " version="1.0" xmlns="http://www.w3.org/2000/svg" width="1000.000000pt" height="800.000000pt" viewBox="0 0 1000.000000 800.000000" preserveAspectRatio="xMidYMid meet">...</svg>
+                        <p class="titulo" style="margin: 0;">Titulo</p>
+                        <p class="anotacion" style="max-width: 295px;">Descripción</p>
+                        <button class="button" id="close_box">Boton</button>
+                    </div>
                 </div>
                 <div class="footer-alert">
                     <div class="fila" style="width: 100%; justify-content: end; gap: 10px;">
@@ -79,6 +86,7 @@
     <!--<div class="footer-app">
         <p class="anotacion">Copyright © 2026 TuClinica</p>
     </div>-->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
     <script src="./scripts/functions.js"></script>
     <script src="./scripts/payment.js"></script>
 

@@ -140,19 +140,19 @@ button{
     height: 30px;
     color: white;
     font-weight: 600;
-    background-color: #019DE2;
+    background-color: #019de28f;
+    box-shadow: 0px 0px 0px .09rem #019DE2;
+    transition: all .13s ease;
     cursor: pointer;
     outline: none;
 }
 button:disabled, input:disabled{ pointer-events: none; }
-#submit_button{
-    background-color: #019de28f;
-    box-shadow: 0px 0px 0px .09rem #019DE2;
-    transition: all .13s ease;
-}
-#submit_button:hover{
+[hidden] { display: none; }
+button:hover{
     background-color: #019DE2;
 }
+.header-app button, .header-alert button{ box-shadow: none !important; }
+.header-app button:hover, .header-alert button:hover{ background-color: transparent !important; }
 .another-login-option{
     font-weight: inherit;
     background-color: rgb(49, 49, 49);
@@ -315,10 +315,11 @@ p.txt-password{ color: rgb(164, 164, 164) !important; }
     z-index: 4;
     backdrop-filter: blur(3px);
     padding: 20px;
-    transition: all .15s ease;
+    transition: all .2s ease;
 }
-.opacador.enabled ,.opacador.modal-enabled{ opacity: 1; pointer-events: all; }
-.opacador.enabled .alert { display: flex !important; }
+.alert-msg, .alert-box{ display: none; }
+.opacador.enabled ,.opacador.modal-enabled, .opacador.enabled-box{ opacity: 1; pointer-events: all; }
+.opacador.enabled .alert, .opacador.enabled .alert-msg, .opacador.enabled-box .alert-box, .opacador.enabled-box .alert { display: flex !important; }
 .alert{
     display: none;
     border-radius: 4px;
@@ -337,6 +338,7 @@ p.txt-password{ color: rgb(164, 164, 164) !important; }
 .alert-body p{ color: white; }
 .footer-alert a.anotacion { box-shadow: 0px 0px 0px .05rem rgb(92, 92, 92);color: white; }
 .footer-alert{ padding: 9px 0 3px; }
+.footer-alert.disabled{ display: none; }
 
 /*Excepciones por pagina*/
 main#main-content.vista-dashboard #page-container{
