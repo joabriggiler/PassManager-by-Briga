@@ -500,9 +500,13 @@ async function procederPago(button) {
         const resultado = await window.payments.pagarPro();
 
         // 2. ¿El usuario cerró la ventana o Lemon devolvió error?
-        if (resultado && resultado.ok) {
+        if (resultado?.ok === true) {
             pasoALaVerificacion = true;
             await iniciarVerificacionPro(opacador);
+        } else if (resultado?.ok === false) {
+            // Caso: pagó pero cerró Lemon sin tocar "Continuar"
+            // Verificamos en segundo plano sin molestar si no se activó.
+            iniciarVerificacionPro(opacador, { maxIntentos: 15, silentTimeout: true });
         }
 
     } catch (error) {
@@ -526,9 +530,10 @@ async function procederPago(button) {
 }
 
 // Separamos la lógica de verificación para que el código sea legible
-async function iniciarVerificacionPro(opacador) {
+async function iniciarVerificacionPro(opacador, opts = {}) {
     let intentos = 0;
-    const maxIntentos = 10; // 10 intentos * 2 seg = 20 segundos
+    const maxIntentos = Number.isFinite(opts.maxIntentos) ? opts.maxIntentos : 10;
+    const silentTimeout = opts.silentTimeout === true;
 
     // Usamos una Promesa para que 'procederPago' pueda hacer el 'await' correctamente
     return new Promise((resolve) => {
@@ -554,7 +559,9 @@ async function iniciarVerificacionPro(opacador) {
                 setTimeout(verificar, 2000); 
             } else {
                 opacador.classList.remove("modal-enabled");
-                mostrarConfirmacionCustom("El pago se procesó, pero la activación tarda. Reinicia la app en unos minutos.", false); 
+                if (!silentTimeout) {
+                    mostrarConfirmacionCustom("El pago se procesó, pero la activación tarda. Reinicia la app en unos minutos.", false);
+                }
                 resolve(false); // Terminó por timeout
             }
         };
