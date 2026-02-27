@@ -242,6 +242,7 @@ async function navegarA(pagina) {
                 const idGuardado = localStorage.getItem("edit_cuenta_id");
                 await prepararVistaEditService(idGuardado);
             }
+            if (paginaAServir === 'auth') prepararVistaAuth();
         }
 
         container.style.opacity = "1";
@@ -289,6 +290,7 @@ async function registrarUsuario(email, masterPassword) {
 
 //2. Inicio de sesión de usuario en PassManager
 let usuarioIdActual = null;
+let pendingLogin = null;
 
 async function loginUsuario(email, masterPassword) {
     email = (email || "").trim().toLowerCase();
@@ -321,14 +323,42 @@ async function loginUsuario(email, masterPassword) {
     const data = await response.json();
 
     if (data.status === "success") {
+        pendingLogin = null;
         setAccessToken(data.access_token);
-        vault.unlock(encKey); // 🔥 llave en RAM
+        vault.unlock(encKey);
+    } else if (data.code === 110) {
+        pendingLogin = { email, authVerifierB64, encKey };
     } else {
+        pendingLogin = null;
         vault.lock();
     }
 
     masterPassword = null;
     return data;
+}
+async function reintentarLoginPendiente() {
+    if (!pendingLogin) return false;
+
+    const { email, authVerifierB64, encKey } = pendingLogin;
+
+    const response = await fetch(`${API_BASE}?accion=login`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ email, auth_verifier: authVerifierB64 }),
+    });
+
+    const data = await response.json();
+
+    if (data.status === "success") {
+        pendingLogin = null;
+        setAccessToken(data.access_token);
+        vault.unlock(encKey);
+        navegarA("dashboard");
+        return true;
+    }
+
+    return false;
 }
 async function cerrarSesion(e) {
     if (e) e.preventDefault();

@@ -46,10 +46,11 @@ function prepararVistaLogin() {
             const resultado = await loginUsuario(email, password);
             clearTimeout(timerLento);
 
-            if (resultado.status === "success") {
+            if (resultado.code === 110) {
                 localStorage.setItem("user_email", email);
-                
-                navegarA("dashboard"); 
+                navegarA("auth");
+                alternarBotonFormulario(undefined, password_input);
+                return;
             } else {
                 if (resultado.code === 102) { // Usuario no existe
                     email_input.focus();

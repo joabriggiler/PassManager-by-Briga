@@ -109,7 +109,8 @@ function prepararVistaRegister() {
                 const resultado = await registrarUsuario(email, password);
                 
                 if (resultado.status === "success") {
-                    navegarA("login");
+                    localStorage.setItem("user_email", email);
+                    navegarA("auth");
                 } else {
                     // Error de API (ej: usuario ya existe)
                     if (resultado.code === 101) {
