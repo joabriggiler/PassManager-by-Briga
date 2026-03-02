@@ -108,6 +108,17 @@ input{
     padding: 7px 7px 7px 10px;
     margin: 0;
 }
+.input-code-container input{
+    padding: 7px 5px;
+    text-align: center;
+    font-size: 23px;
+    font-weight: 900;
+    user-select: none;
+    transition: all .1s ease;
+}
+.input-code-container input:focus{ background-color: #292929; }
+.otp-box { caret-color: transparent; user-select: none; }
+
 input:focus{ box-shadow: 0px 0px 0px .05rem #019DE2; }
 input:focus:not(:placeholder-shown) + label{ color: #019DE2; }
 input.input-error{ box-shadow: 0px 0px 0px .05rem #e22a01 !important; }
@@ -407,7 +418,7 @@ main#main-content.vista-dashboard #page-container{
 
 .message_error_input {
     text-align: end;
-    color: #e22a01;
+    color: #e2d701;
     margin: -13px 0 2px;
     font-size: 12px !important;
     width: 100%;

@@ -267,7 +267,8 @@ async function registrarUsuario(email, masterPassword) {
     email = (email || "").trim().toLowerCase();
 
     const kdf_salt_b64 = generarSaltB64();
-    const { authVerifierB64, iterations } = await vault.deriveFromPassword(masterPassword, kdf_salt_b64, KDF_DEFAULT_ITERS);
+    // Cambiamos la desestructuración para capturar encKey
+    const { encKey, authVerifierB64, iterations } = await vault.deriveFromPassword(masterPassword, kdf_salt_b64, KDF_DEFAULT_ITERS);
 
     const url = `${API_BASE}?accion=registro`;
     const response = await fetch(url, {
@@ -275,17 +276,24 @@ async function registrarUsuario(email, masterPassword) {
         headers: { "Content-Type": "application/json" },
         credentials: 'include',
         body: JSON.stringify({
-        email,
-        kdf_salt_b64,
-        kdf_iter: iterations,
-        auth_verifier: authVerifierB64,
+            email,
+            kdf_salt_b64,
+            kdf_iter: iterations,
+            auth_verifier: authVerifierB64,
         }),
     });
+
+    const data = await response.json();
+
+    // NUEVO: Si el registro fue exitoso, guardamos el login pendiente en memoria
+    if (data.status === "success") {
+        pendingLogin = { email, authVerifierB64, encKey };
+    }
 
     // best-effort: soltar referencia
     masterPassword = null;
 
-    return await response.json();
+    return data;
 }
 
 //2. Inicio de sesión de usuario en PassManager
@@ -337,7 +345,11 @@ async function loginUsuario(email, masterPassword) {
     return data;
 }
 async function reintentarLoginPendiente() {
-    if (!pendingLogin) return false;
+    if (!pendingLogin) return { status: "error", message: "Sesión expirada." };
+
+    // Buscamos el input del código en la vista auth.html
+    const codeInput = document.getElementById("auth_code");
+    const code = codeInput ? codeInput.value.trim() : "";
 
     const { email, authVerifierB64, encKey } = pendingLogin;
 
@@ -345,7 +357,11 @@ async function reintentarLoginPendiente() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
-        body: JSON.stringify({ email, auth_verifier: authVerifierB64 }),
+        body: JSON.stringify({ 
+            email, 
+            auth_verifier: authVerifierB64, 
+            code: code // Enviamos el código ingresado
+        }),
     });
 
     const data = await response.json();
@@ -355,10 +371,10 @@ async function reintentarLoginPendiente() {
         setAccessToken(data.access_token);
         vault.unlock(encKey);
         navegarA("dashboard");
-        return true;
+        return { status: "success" };
     }
 
-    return false;
+    return data; // Retornamos el error (ej: código incorrecto)
 }
 async function cerrarSesion(e) {
     if (e) e.preventDefault();
@@ -411,23 +427,39 @@ async function guardarCuentaServicio(servicio, emailServicio, passServicio, urlS
 
 // Función para mostrar errores en el HTML
 function mostrarError(mensaje, inputElement = null, esAdvertencia = false) {
+    // 1. Limpiar mensajes previos (comportamiento original)
     document.querySelectorAll(".message_error_input").forEach(el => el.remove());
 
-    if (inputElement) inputElement.classList.remove("different-password"); 
+    if (!inputElement) return;
 
-    if (!mensaje || !inputElement) return;
+    // 2. NORMALIZACIÓN: Si es un solo elemento, lo convertimos en un array de un solo ítem.
+    // Si ya es un NodeList o Array, lo convertimos a un Array estándar.
+    const inputs = (inputElement instanceof NodeList || Array.isArray(inputElement)) 
+        ? Array.from(inputElement) 
+        : [inputElement];
 
-    if (esAdvertencia) inputElement.classList.add("different-password");
+    // 3. Quitar clase de error de TODOS los elementos del grupo
+    inputs.forEach(el => el.classList.remove("different-password"));
 
+    if (!mensaje) return;
+
+    // 4. Si es advertencia, añadir la clase a TODOS los elementos
+    if (esAdvertencia) {
+        inputs.forEach(el => el.classList.add("different-password"));
+    }
+
+    // 5. Crear el elemento de error
     const pError = document.createElement("p");
     pError.className = "message_error_input";
-    
     if (esAdvertencia) pError.classList.add("warning-yellow");
-
     pError.innerText = mensaje;
 
-    const contenedorInput = inputElement.closest(".input");
-    if (contenedorInput) contenedorInput.after(pError);
+    // 6. POSICIONAMIENTO: Usamos el primer input del grupo como referencia.
+    // Buscamos su contenedor .input para inyectar el mensaje justo después.
+    const contenedorReferencia = inputs[0].closest(".input");
+    if (contenedorReferencia) {
+        contenedorReferencia.after(pError);
+    }
 }
 
 //Alternar boton de formulario
