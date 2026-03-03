@@ -30,7 +30,7 @@ PassManager es una aplicación de escritorio (Electron) para **guardar y adminis
 
 PassManager realiza conexiones de red únicamente para:
 
-1. **API de PassManager** (login/sync): `https://passmanager-api.onrender.com` :contentReference[oaicite:0]{index=0}  
+1. **API de PassManager** (login/sync): `https://api-137-131-235-195.sslip.io` :contentReference[oaicite:0]{index=0}  
 2. **Autocompletado opcional de servicios (Clearbit):** `https://autocomplete.clearbit.com` :contentReference[oaicite:1]{index=1}  
 3. **Auto-actualizaciones (solo instalador):** consulta releases/publicación en **GitHub** vía `electron-updater` :contentReference[oaicite:2]{index=2}
 
