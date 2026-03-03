@@ -2,6 +2,7 @@ function prepararVistaAuth() {
     const btnDone = document.getElementById("submit_button");
     const hiddenInput = document.getElementById("auth_code");
     const boxes = document.querySelectorAll(".otp-box");
+    document.getElementById("auth_email").textContent = (pendingLogin && pendingLogin.email) ? pendingLogin.email : "";
 
     // Sincroniza las 6 cajitas con el input oculto que usa el backend
     const syncCode = () => {
