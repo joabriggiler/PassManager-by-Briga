@@ -2,7 +2,7 @@
 
 PassManager es una aplicación de escritorio (Electron) para **guardar y administrar credenciales** (servicio, email y contraseña) con foco en **privacidad** y **seguridad por diseño**.
 
-> **Idea clave:** los datos se cifran **antes de salir del dispositivo**. El backend solo almacena **blobs cifrados** y aplica controles de autenticación/autorización.
+> **Idea clave:** los datos se cifran **antes de salir del dispositivo**. El backend solo almacena **blobs cifrados** y aplica estrictos controles de autenticación, autorización y aislamiento de red.
 
 ---
 
@@ -12,7 +12,7 @@ PassManager es una aplicación de escritorio (Electron) para **guardar y adminis
 - Listado con búsqueda
 - Copiar contraseña al portapapeles
 - Editar / eliminar servicios
-- Sesión con renovación automática (tokens)
+- Sesión con renovación automática (tokens JWT)
 
 ---
 
@@ -30,9 +30,9 @@ PassManager es una aplicación de escritorio (Electron) para **guardar y adminis
 
 PassManager realiza conexiones de red únicamente para:
 
-1. **API de PassManager** (login/sync): `https://api-137-131-235-195.sslip.io` :contentReference[oaicite:0]{index=0}  
-2. **Autocompletado opcional de servicios (Clearbit):** `https://autocomplete.clearbit.com` :contentReference[oaicite:1]{index=1}  
-3. **Auto-actualizaciones (solo instalador):** consulta releases/publicación en **GitHub** vía `electron-updater` :contentReference[oaicite:2]{index=2}
+1. **API de PassManager** (login/sync): `https://api-137-131-235-195.sslip.io`
+2. **Autocompletado opcional de servicios (Clearbit):** `https://autocomplete.clearbit.com`
+3. **Auto-actualizaciones (solo instalador):** consulta releases/publicación en **GitHub** vía `electron-updater`
 
 ---
 
@@ -55,17 +55,28 @@ Si descargaste el instalador desde **Releases** de este repositorio, podés cont
 
 ---
 
-## 🔐 Seguridad (alto nivel)
+## 🔐 Seguridad (Arquitectura y Criptografía)
 
-Este repositorio implementa medidas para reducir riesgos comunes, sin exponer detalles innecesarios:
+Este proyecto implementa defensa en profundidad (Defense in Depth) abarcando desde el cliente hasta la base de datos:
 
-- **Cifrado en cliente (Vault):** la app cifra/descifra localmente y sube al servidor únicamente un `blob` cifrado.
-- **Claves derivadas desde contraseña:** la clave de la bóveda se deriva localmente usando un KDF con parámetros fuertes.
-- **Autenticación sin enviar la contraseña:** el login no transmite la contraseña en texto plano al servidor.
-- **Sesiones con tokens:** el backend emite tokens de acceso de corta duración y un mecanismo de renovación.
-- **Aislamiento del renderer (Electron):** configuración orientada a reducir superficie de ataque.
-- **Política CSP en la UI:** se limita la carga/conexión a orígenes específicos :contentReference[oaicite:3]{index=3}
-- **Empaquetado:** ASAR habilitado y compresión máxima para distribución :contentReference[oaicite:4]{index=4}
+### 1. Seguridad en el Cliente (Desktop App)
+- **Cifrado en cliente (Vault):** La app cifra/descifra localmente usando algoritmos robustos y sube al servidor únicamente un `blob` de datos ininteligible.
+- **Derivación de Claves (KDF):** La clave de la bóveda se deriva localmente usando parámetros criptográficos fuertes (Argon2).
+- **Zero-Knowledge Proof parcial:** La contraseña en texto plano jamás viaja por la red ni toca el servidor.
+- **Aislamiento del renderer (Electron):** Configuración orientada a reducir la superficie de ataque, con políticas CSP (Content Security Policy) estrictas.
+- **Empaquetado seguro:** ASAR habilitado y compresión máxima para distribución.
+
+### 2. Seguridad en el Servidor (API en Oracle Cloud)
+- **Cifrado de capa de aplicación:** Uso de `AES-256-GCM` para operaciones internas de la API que requieran manejo de secretos.
+- **Gestión de Sesiones (JWT):** Autenticación mediante tokens de acceso de corta duración (Access Tokens) y cookies seguras, HttpOnly y SameSite para los Refresh Tokens.
+- **Gestión de Secretos:** Las variables de entorno y certificados residen fuera del código fuente, con permisos restringidos de lectura en Linux.
+- **Prevención de Inyecciones (SQLi):** Uso estricto de Prepared Statements nativos (`PDO::ATTR_EMULATE_PREPARES = false`) para neutralizar cualquier vector de inyección SQL.
+
+### 3. Seguridad en la Base de Datos (Supabase / PostgreSQL)
+- **Aislamiento a nivel de red (Network Restrictions):** La base de datos rechaza cualquier intento de conexión desde internet. El acceso está restringido de forma exclusiva a la IP estática del servidor en Oracle Cloud.
+- **Tráfico Cifrado Forzado (SSL Verification):** La comunicación entre la API y Supabase requiere y verifica un certificado SSL raíz (`sslmode=verify-full`), mitigando ataques Man-in-the-Middle (MitM).
+- **Principio de Mínimo Privilegio:** La API se conecta utilizando un rol restringido de PostgreSQL, sin privilegios administrativos ni acceso a esquemas no autorizados.
+- **Row Level Security (RLS):** Todas las tablas cuentan con políticas de seguridad a nivel de fila estrictas, garantizando que el motor de la base de datos audite y bloquee accesos no autorizados por diseño.
 
 ### Limitaciones (amenazas fuera de alcance)
 - Si tu equipo está comprometido (malware/keylogger), ninguna app de passwords puede garantizar protección total.
@@ -76,9 +87,9 @@ Este repositorio implementa medidas para reducir riesgos comunes, sin exponer de
 ## 🧱 Stack
 
 - **Desktop:** Electron + HTML/CSS/JS
-- **Backend:** PHP (API HTTP)
-- **DB:** Postgres (Supabase)
-- **Hosting backend:** Render
+- **Backend:** API REST en PHP 
+- **DB:** PostgreSQL (Supabase)
+- **Infraestructura:** Oracle Cloud (Ubuntu Server) + Connection Pooling (IPv4)
 
 ---
 
