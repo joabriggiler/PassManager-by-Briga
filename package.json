@@ -1,66 +1,12 @@
 {
-  "name": "pass-manager",
-  "version": "1.2.5",
-  "description": "PassManager es una app para administrar contraseñas.",
-  "license": "MIT",
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/joabriggiler/PassManager-by-Briga.git"
-  },
-  "main": "main.js",
+  "name": "passmanager-tauri",
+  "private": true,
+  "version": "1.2.6",
+  "type": "module",
   "scripts": {
-    "start": "electron .",
-    "pack": "electron-builder --dir",
-    "dist": "electron-builder --publish always"
+    "tauri": "tauri"
   },
   "devDependencies": {
-    "cz-conventional-changelog": "^3.3.0",
-    "electron": "^30.5.1",
-    "electron-builder": "^24.13.3",
-    "electron-reloader": "^1.2.3"
-  },
-  "build": {
-    "appId": "com.passmanager.app",
-    "productName": "PassManager",
-    "asar": true,
-    "compression": "maximum",
-    "files": [
-      "main.js",
-      "preload.js",
-      "index.html",
-      "*.html",
-      "*.css",
-      "scripts/**/*",
-      "resources/**/*",
-      "favicon.ico"
-    ],
-    "win": {
-      "icon": "favicon.ico",
-      "target": [
-        "nsis"
-      ]
-    },
-    "nsis": {
-      "oneClick": false,
-      "allowToChangeInstallationDirectory": true,
-      "perMachine": true,
-      "createDesktopShortcut": true,
-      "createStartMenuShortcut": true
-    },
-    "publish": [
-      {
-        "provider": "github",
-        "channel": "latest",
-        "releaseType": "release"
-      }
-    ]
-  },
-  "dependencies": {
-    "electron-updater": "^6.7.3"
-  },
-  "config": {
-    "commitizen": {
-      "path": "./node_modules/cz-conventional-changelog"
-    }
+    "@tauri-apps/cli": "^2"
   }
 }

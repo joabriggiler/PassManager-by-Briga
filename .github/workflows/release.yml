@@ -1,27 +1,41 @@
-name: Build & Release (Windows)
-
+name: "Release"
 on:
   push:
-    tags:
-      - "v*.*.*"
-
-permissions:
-  contents: write
+    branches:
+      - main # Si tu rama principal se llama 'master', cambiá 'main' por 'master'
 
 jobs:
-  release:
-    runs-on: windows-latest
+  publish:
+    permissions:
+      contents: write
+    strategy:
+      fail-fast: false
+      matrix:
+        platform: [windows-latest]
+
+    runs-on: ${{ matrix.platform }}
     steps:
       - uses: actions/checkout@v4
 
-      - uses: actions/setup-node@v4
+      - name: setup node
+        uses: actions/setup-node@v4
         with:
-          node-version: 20
-          cache: npm
+          node-version: lts/*
 
-      - run: npm ci
+      - name: install Rust stable
+        uses: dtolnay/rust-toolchain@stable
 
-      - name: Build & publish
+      - name: install dependencies
+        run: npm install
+
+      - uses: tauri-apps/tauri-action@v0
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: npm run dist
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+        with:
+          tagName: v__VERSION__ # Sacará la versión 1.2.5 de tu tauri.conf.json
+          releaseName: "PassManager v__VERSION__"
+          releaseBody: "Versión migrada de Electron a Tauri (10MB)."
+          releaseDraft: true
+          prerelease: false

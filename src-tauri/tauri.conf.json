@@ -1,0 +1,52 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "PassManager",
+  "version": "1.2.6",
+  "identifier": "com.passmanager.app",
+  "build": {
+    "frontendDist": "../src",
+    "beforeDevCommand": "",
+    "beforeBuildCommand": ""
+  },
+  "app": {
+    "withGlobalTauri": true,
+    "windows": [
+      {
+        "label": "main",
+        "title": "PassManager",
+        "width": 850,
+        "height": 700,
+        "minWidth": 350,
+        "minHeight": 500,
+        "resizable": true,
+        "decorations": false,
+        "transparent": false,
+        "center": true
+      }
+    ],
+    "security": {
+      "csp": "default-src 'self' tauri://localhost 'unsafe-inline' 'unsafe-eval'; connect-src 'self' ipc: https://api.passmanager.com.ar"
+    }
+  },
+  "bundle": {
+    "active": true,
+    "targets": "all",
+    "icon": [
+      "icons/32x32.png",
+      "icons/128x128.png",
+      "icons/128x128@2x.png",
+      "icons/icon.icns",
+      "icons/icon.ico"
+    ]
+  },
+  "plugins": {
+    "updater": {
+      "active": true,
+      "endpoints": [
+        "https://api.passmanager.com.ar/update.json"
+      ],
+      "dialog": false,
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDVFMzlFNEIzQzE4NzdEN0IKUldSN2ZZZkJzK1E1WHBkMEp4eW5tdlVyeWVUbjdUMGpLN2RLTm5UK2hGVVNRNWJsak5xZ3VhMGwK"
+    }
+  }
+}
