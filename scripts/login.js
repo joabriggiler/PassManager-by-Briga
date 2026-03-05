@@ -46,12 +46,23 @@ function prepararVistaLogin() {
             const resultado = await loginUsuario(email, password);
             clearTimeout(timerLento);
 
-            if (resultado.code === 110) {
+            // --- ¡NUEVO!: Si pasa directo porque es dispositivo de confianza ---
+            if (resultado.status === "success") {
+                localStorage.setItem("user_email", email);
+                navegarA("dashboard");
+                return;
+            } 
+            
+            // --- Si es dispositivo nuevo y pide código ---
+            else if (resultado.code === 110) {
                 localStorage.setItem("user_email", email);
                 navegarA("auth");
                 alternarBotonFormulario(undefined, password_input);
                 return;
-            } else {
+            } 
+            
+            // --- Si hubo algún error ---
+            else {
                 if (resultado.code === 102) { // Usuario no existe
                     email_input.focus();
                     mostrarError(resultado.message, email_input, true);
