@@ -100,7 +100,7 @@ const vault = (() => {
 })();
 
 
-const API_BASE = 'https://api-137-131-235-195.sslip.io/api.php';
+const API_BASE = 'https://api.passmanager.com.ar/api.php';
 
 // Guardá el access token en memoria (mejor que localStorage)
 // Persistimos el access token (para que no se pierda entre vistas / recargas)
