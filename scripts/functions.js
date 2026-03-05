@@ -176,6 +176,16 @@ async function apiAuth(accion, { method = 'POST', body = null, query = null } = 
     return data;
 }
 
+// Obtiene o genera un ID único para esta instalación de Electron
+function getDeviceId() {
+    let id = localStorage.getItem('pm_device_id');
+    if (!id) {
+        id = crypto.randomUUID(); // Genera un UUID estándar
+        localStorage.setItem('pm_device_id', id);
+    }
+    return id;
+}
+
 // Control de ventana (Barra superior)
 document.getElementById('minimize_app').addEventListener('click', () => window.pm.window.minimize());
 document.getElementById('maximize_app').addEventListener('click', () => window.pm.window.maximize());
@@ -320,12 +330,16 @@ async function loginUsuario(email, masterPassword) {
         preData.kdf_iter
     );
 
-    // 3) login enviando SOLO auth_verifier
+    // 3) login enviando auth_verifier y el ID del dispositivo
     const response = await fetch(`${API_BASE}?accion=login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: 'include',
-        body: JSON.stringify({ email, auth_verifier: authVerifierB64 }),
+        body: JSON.stringify({ 
+            email, 
+            auth_verifier: authVerifierB64,
+            device_id: getDeviceId()
+        }),
     });
 
     const data = await response.json();
@@ -360,7 +374,8 @@ async function reintentarLoginPendiente() {
         body: JSON.stringify({ 
             email, 
             auth_verifier: authVerifierB64, 
-            code: code // Enviamos el código ingresado
+            code: code,
+            device_id: getDeviceId()
         }),
     });
 
