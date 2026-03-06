@@ -344,3 +344,6 @@ function prepararVistaDashboard() {
         fillViewport(contenedorMain, () => renderNextBatch(LOTE_RELLENO));
     });
 }
+
+
+window.genPassFill = genPassFill;

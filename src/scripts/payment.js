@@ -12,13 +12,12 @@
         // Si la API falla al crear el link, devolvemos el error tal cual
         if (data?.status !== "success" || !data?.url) return data;
 
-        // 2. Abrimos el modal de Electron y ESPERAMOS a que se cierre
-        // Esta promesa devolverá { ok: true } si llegó a la URL de éxito
-        // o { ok: false } si el usuario cerró la ventana manualmente.
-        const r = await window.pm.openPayment(data.url);
+        // 1. Abrimos el link de Lemon Squeezy en el navegador predeterminado del usuario
+        await window.pm.openExternal(data.url);
 
-        // 3. Devolvemos ese objeto r directamente a procederPago()
-        return r; 
+        // 2. Simulamos un "cierre de modal" para que functions.js 
+        // dispare la verificación en segundo plano (silentTimeout)
+        return { ok: false }; 
     }
 
     async function checkProStatus() {

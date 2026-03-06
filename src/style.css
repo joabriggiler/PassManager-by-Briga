@@ -5,6 +5,12 @@
     font-style: normal;
 }
 
+/* Ocultar el ícono de ojo nativo de Edge/WebView2 en Tauri */
+input[type="password"]::-ms-reveal,
+input[type="password"]::-ms-clear {
+    display: none;
+}
+
 /*Esenciales*/
 html{ background-color: transparent !important; font-family: "Proxima Nova",-apple-system,Roboto,Arial,sans-serif !important; user-select: none; }
 html, body, .header-app,.header-alert, .opacador, .header-app button svg, main, #page-container, .footer-app, .footer-alert, .load-page { width: 100%; height: 100%; }

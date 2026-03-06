@@ -1,3 +1,5 @@
+document.addEventListener('contextmenu', event => event.preventDefault());
+
 const KDF_DEFAULT_ITERS = 310000; // podés ajustar
 // Alias para mantener tu código nuevo tal cual
 async function encriptarBlob(obj) {
@@ -1023,3 +1025,9 @@ const fireConfetti = (() => {
         })();
     };
 })();
+
+
+window.navegarA = navegarA;
+window.mostrarOcultarPassword = mostrarOcultarPassword;
+window.cerrarSesion = cerrarSesion;
+window.procederPago = procederPago;

@@ -1,13 +1,14 @@
 // tauri-bridge.js - Versión final estable para Tauri v2
 const { getCurrentWindow } = window.__TAURI__.window;
 const { open } = window.__TAURI__.opener;
-const { check } = window.__TAURI__.updater; // API de Updater en v2
+const { check } = window.__TAURI__.updater;
+const { getVersion } = window.__TAURI__.app;
 const appWindow = getCurrentWindow();
 
 let pendingUpdate = null;
 
 window.pm = {
-    getVersion: async () => "1.2.5",
+    getVersion: async () => await getVersion(),
     openExternal: async (url) => await open(url),
     window: {
         minimize: () => appWindow.minimize(),
