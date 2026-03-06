@@ -4,33 +4,7 @@ window.mostrarOcultarPassword = mostrarOcultarPassword;
 window.cerrarSesion = cerrarSesion;
 window.procederPago = procederPago;
 
-// Burlar el escudo CSP de Tauri en Producción: 
-// Convierte los onclick bloqueados del HTML en listeners seguros al vuelo
-document.addEventListener('DOMContentLoaded', () => {
-    document.body.addEventListener('click', (e) => {
-        const btn = e.target.closest('[onclick]');
-        if (!btn) return;
-        
-        const accion = btn.getAttribute('onclick');
-        if (accion.includes('navegarA')) {
-            e.preventDefault();
-            const destino = accion.match(/navegarA\(['"]([^'"]+)['"]\)/);
-            if (destino && destino[1]) navegarA(destino[1]);
-        } else if (accion.includes('mostrarOcultarPassword')) {
-            e.preventDefault();
-            mostrarOcultarPassword(btn);
-        } else if (accion.includes('cerrarSesion')) {
-            e.preventDefault();
-            cerrarSesion();
-        } else if (accion.includes('procederPago')) {
-            e.preventDefault();
-            procederPago(btn);
-        }
-    });
-});
-
 document.addEventListener('contextmenu', event => event.preventDefault());
-
 
 const KDF_DEFAULT_ITERS = 310000; // podés ajustar
 // Alias para mantener tu código nuevo tal cual
