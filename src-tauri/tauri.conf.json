@@ -25,7 +25,7 @@
       }
     ],
     "security": {
-      "csp": "default-src 'self' tauri://localhost 'unsafe-inline' 'unsafe-eval'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://* http://*; connect-src 'self' ipc: https://api.passmanager.com.ar"
+      "csp": "default-src 'self' tauri: https://tauri.localhost 'unsafe-inline' 'unsafe-eval'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' asset: data: https://* http://*; connect-src 'self' ipc: https://api.passmanager.com.ar https://*.github.io https://*.githubusercontent.com"
     }
   },
   "bundle": {
@@ -43,9 +43,9 @@
     "updater": {
       "active": true,
       "endpoints": [
-        "https://api.passmanager.com.ar/update.json"
+        "https://gist.githubusercontent.com/joabriggiler/caac2f6b6b2ff08cc67217a2ed5d0d69/raw/update.json"
       ],
-      "dialog": false,
+      "dialog": true,
       "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDVFMzlFNEIzQzE4NzdEN0IKUldSN2ZZZkJzK1E1WHBkMEp4eW5tdlVyeWVUbjdUMGpLN2RLTm5UK2hGVVNRNWJsak5xZ3VhMGwK"
     }
   }

@@ -1,8 +1,7 @@
 name: "Release"
 on:
   push:
-    branches:
-      - main # Si tu rama principal se llama 'master', cambiá 'main' por 'master'
+    branches: [main]
 
 jobs:
   publish:
@@ -11,44 +10,52 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        # 1. AGREGAMOS LINUX (UBUNTU) A LA MATRIZ
         platform: [windows-latest, ubuntu-22.04]
-
     runs-on: ${{ matrix.platform }}
     steps:
       - uses: actions/checkout@v4
-
-      # 2. AGREGAMOS LAS DEPENDENCIAS EXCLUSIVAS PARA LINUX
       - name: install Linux dependencies
         if: matrix.platform == 'ubuntu-22.04'
         run: |
           sudo apt-get update
-          sudo apt-get install -y \
-            libgtk-3-dev \
-            libwebkit2gtk-4.0-dev \
-            libwebkit2gtk-4.1-dev \
-            libayatana-appindicator3-dev \
-            librsvg2-dev
-
-      - name: setup node
-        uses: actions/setup-node@v4
+          sudo apt-get install -y libgtk-3-dev libwebkit2gtk-4.0-dev libwebkit2gtk-4.1-dev libayatana-appindicator3-dev librsvg2-dev
+      - uses: actions/setup-node@v4
         with:
           node-version: lts/*
-
-      - name: install Rust stable
-        uses: dtolnay/rust-toolchain@stable
-
-      - name: install dependencies
-        run: npm install
-
+      - uses: dtolnay/rust-toolchain@stable
+      - run: npm install
       - uses: tauri-apps/tauri-action@v0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
           TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
         with:
-          tagName: v__VERSION__ # Sacará la versión de tu tauri.conf.json
+          tagName: v__VERSION__
           releaseName: "PassManager v__VERSION__"
-          releaseBody: "Versión migrada de Electron a Tauri (10MB)."
           releaseDraft: true
           prerelease: false
+
+  # ESTE TRABAJO SE ENCARGA DE ACTUALIZAR EL GIST
+  update-updater:
+    needs: publish
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Update Gist Manifest
+        env:
+          GH_TOKEN: ${{ secrets.GIST_TOKEN }}
+          GIST_ID: caac2f6b6b2ff08cc67217a2ed5d0d69
+        run: |
+          VERSION=$(jq -r .version src-tauri/tauri.conf.json)
+          # Obtenemos las firmas y URLs de la última release
+          MSI_URL=$(gh release view v$VERSION --json assets -q '.assets[] | select(.name | endswith(".msi.zip")) | .url')
+          MSI_SIG=$(curl -sL "$MSI_URL.sig")
+          APPIMAGE_URL=$(gh release view v$VERSION --json assets -q '.assets[] | select(.name | endswith(".AppImage.tar.gz")) | .url')
+          APPIMAGE_SIG=$(curl -sL "$APPIMAGE_URL.sig")
+
+          # Generamos el JSON
+          printf '{"version":"%s","notes":"Actualización automática","pub_date":"%s","platforms":{"windows-x86_64":{"signature":"%s","url":"%s"},"linux-x86_64":{"signature":"%s","url":"%s"}}}' \
+          "$VERSION" "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "$MSI_SIG" "$MSI_URL" "$APPIMAGE_SIG" "$APPIMAGE_URL" > update.json
+          
+          # Subimos al Gist
+          gh gist edit $GIST_ID update.json
