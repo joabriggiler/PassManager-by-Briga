@@ -6,6 +6,35 @@ window.procederPago = procederPago;
 
 document.addEventListener('contextmenu', event => event.preventDefault());
 
+document.addEventListener('click', (e) => {
+    // Buscamos si el elemento clickeado (o su padre) tiene un 'onclick'
+    const target = e.target.closest('[onclick]');
+    if (!target) return;
+
+    // Si es el ojo de la contraseña, dejamos que su función específica lo maneje
+    if (target.classList.contains('mostrarPassword')) return;
+
+    // Para cualquier otro botón, extraemos la función y la ejecutamos manualmente
+    const attr = target.getAttribute('onclick');
+    if (attr) {
+        e.preventDefault();
+        e.stopPropagation();
+        
+        // Convertimos el string "miFuncion('arg')" en una ejecución real
+        try {
+            const funcName = attr.split('(')[0];
+            const argsRaw = attr.match(/\((.*?)\)/);
+            const args = argsRaw ? argsRaw[1].split(',').map(arg => arg.trim().replace(/['"]/g, '')) : [];
+            
+            if (typeof window[funcName] === 'function') {
+                window[funcName](...args);
+            }
+        } catch (err) {
+            console.error("Error al interceptar click:", err);
+        }
+    }
+}, true); // El 'true' es clave para ganarles a las restricciones del sistema
+
 const KDF_DEFAULT_ITERS = 310000; // podés ajustar
 // Alias para mantener tu código nuevo tal cual
 async function encriptarBlob(obj) {
