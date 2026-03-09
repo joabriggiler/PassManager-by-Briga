@@ -3,37 +3,42 @@ window.navegarA = navegarA;
 window.mostrarOcultarPassword = mostrarOcultarPassword;
 window.cerrarSesion = cerrarSesion;
 window.procederPago = procederPago;
-
-document.addEventListener('contextmenu', event => event.preventDefault());
+window.genPass = genPass;
 
 document.addEventListener('click', (e) => {
-    // Buscamos si el elemento clickeado (o su padre) tiene un 'onclick'
     const target = e.target.closest('[onclick]');
     if (!target) return;
 
-    // Si es el ojo de la contraseña, dejamos que su función específica lo maneje
+    // Si es el ojo de la contraseña, el código original ya lo maneja
     if (target.classList.contains('mostrarPassword')) return;
 
-    // Para cualquier otro botón, extraemos la función y la ejecutamos manualmente
     const attr = target.getAttribute('onclick');
     if (attr) {
         e.preventDefault();
         e.stopPropagation();
         
-        // Convertimos el string "miFuncion('arg')" en una ejecución real
         try {
             const funcName = attr.split('(')[0];
             const argsRaw = attr.match(/\((.*?)\)/);
-            const args = argsRaw ? argsRaw[1].split(',').map(arg => arg.trim().replace(/['"]/g, '')) : [];
+            
+            // --- CORRECCIÓN AQUÍ ---
+            const args = argsRaw ? argsRaw[1].split(',').map(arg => {
+                const val = arg.trim();
+                if (val === 'this') return target; // Pasamos el elemento REAL
+                if (val === 'event') return e;     // Pasamos el evento REAL
+                return val.replace(/['"]/g, '');   // Es un string normal
+            }) : [];
             
             if (typeof window[funcName] === 'function') {
                 window[funcName](...args);
+            } else {
+                console.warn(`La función ${funcName} no está expuesta en window.`);
             }
         } catch (err) {
             console.error("Error al interceptar click:", err);
         }
     }
-}, true); // El 'true' es clave para ganarles a las restricciones del sistema
+}, true);
 
 const KDF_DEFAULT_ITERS = 310000; // podés ajustar
 // Alias para mantener tu código nuevo tal cual
@@ -1078,3 +1083,23 @@ const fireConfetti = (() => {
         })();
     };
 })();
+
+
+// Password generator (crypto-safe, minimal, unbiased). Usage: genPass(24)
+function genPass(len = 20, chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()-_=+[]{};:,.<>/?~") {
+    if (!Number.isInteger(len) || len < 1) throw new Error("len inválido");
+    if (typeof chars !== "string" || chars.length < 2) throw new Error("chars inválido");
+    if (!globalThis.crypto?.getRandomValues) throw new Error("crypto.getRandomValues no disponible");
+
+    const out = [];
+    const max = 0x100000000;                 // 2^32
+    const limit = max - (max % chars.length); // rejection sampling (sin sesgo)
+    const buf = new Uint32Array(1);
+
+    while (out.length < len) {
+        crypto.getRandomValues(buf);
+        const x = buf[0];
+        if (x < limit) out.push(chars[x % chars.length]);
+    }
+    return out.join("");
+}

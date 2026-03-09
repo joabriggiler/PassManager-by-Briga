@@ -3,6 +3,9 @@ let cuentasVisibles = 0;
 const LOTE_CARGA = 24;
 const LOTE_RELLENO = 6;
 
+window.alternarVisibilidadPassword = alternarVisibilidadPassword;
+window.copiarPass = copiarPass;
+
 // Obtenemos las cuentas del usuario
 async function obtenerCuentasUsuario() {
     try {
@@ -93,25 +96,6 @@ function genPassFill(svg){
     // si tu UI escucha cambios (validaciones, habilitar botón, etc.)
     input.dispatchEvent(new Event("input", { bubbles: true }));
     input.dispatchEvent(new Event("change", { bubbles: true }));
-}
-
-// Password generator (crypto-safe, minimal, unbiased). Usage: genPass(24)
-function genPass(len = 20, chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()-_=+[]{};:,.<>/?~") {
-    if (!Number.isInteger(len) || len < 1) throw new Error("len inválido");
-    if (typeof chars !== "string" || chars.length < 2) throw new Error("chars inválido");
-    if (!globalThis.crypto?.getRandomValues) throw new Error("crypto.getRandomValues no disponible");
-
-    const out = [];
-    const max = 0x100000000;                 // 2^32
-    const limit = max - (max % chars.length); // rejection sampling (sin sesgo)
-    const buf = new Uint32Array(1);
-
-    while (out.length < len) {
-        crypto.getRandomValues(buf);
-        const x = buf[0];
-        if (x < limit) out.push(chars[x % chars.length]);
-    }
-    return out.join("");
 }
 
 function escapeHtml(text) {
