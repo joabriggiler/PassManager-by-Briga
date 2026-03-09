@@ -32,7 +32,7 @@ jobs:
         with:
           tagName: v__VERSION__
           releaseName: "PassManager v__VERSION__"
-          releaseDraft: true
+          releaseDraft: false
           prerelease: false
 
   # ESTE TRABAJO SE ENCARGA DE ACTUALIZAR EL GIST
